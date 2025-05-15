@@ -102,7 +102,7 @@ const Exam = () => {
         <div>
           <h1 className="text-3xl font-bold mb-6">Exam Results</h1>
           <p className="mb-4 text-lg">
-            You answered <span className="font-semibold">{score}</span> out of{' '}
+            Your Correct answer <span className="font-semibold">{score}</span> out of{' '}
             <span className="font-semibold">{questions.length}</span> questions .
           </p>
           <ol className="list-decimal list-inside space-y-4">
