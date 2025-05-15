@@ -85,7 +85,7 @@ const Exam = () => {
 
   const handleLogout = () => {
     localStorage.clear();
-    navigate('/');
+    navigate('/',{ replace: true });
   };
 
   if (loading) {
