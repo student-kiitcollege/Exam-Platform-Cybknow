@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 const Exam = () => {
@@ -11,8 +11,32 @@ const Exam = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isTimeUp, setIsTimeUp] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-  const [score, setScore] = useState(0);
+  const [mediaStream, setMediaStream] = useState(null);
+
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const getMediaStream = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        setMediaStream(stream);
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error('Failed to get media stream on exam start:', err);
+        alert('Camera and microphone permission are required to take the exam.');
+        navigate('/', { replace: true });
+      }
+    };
+    getMediaStream();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (mediaStream && videoRef.current) {
+      videoRef.current.srcObject = mediaStream;
+    }
+  }, [mediaStream]);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -40,7 +64,7 @@ const Exam = () => {
   }, [examId]);
 
   useEffect(() => {
-    if (loading || error || showResults) return;
+    if (loading || error) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -54,7 +78,7 @@ const Exam = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [loading, error, showResults]);
+  }, [loading, error]);
 
   useEffect(() => {
     if (isTimeUp) {
@@ -62,30 +86,26 @@ const Exam = () => {
     }
   }, [isTimeUp]);
 
+  useEffect(() => {
+    return () => {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        console.log('Camera and microphone stopped on unmount.');
+      }
+    };
+  }, [mediaStream]);
+
   const handleChange = (id, value) => {
     setAnswers((prevAnswers) => ({ ...prevAnswers, [id]: value }));
   };
 
   const handleSubmit = () => {
-    let correctCount = 0;
-    questions.forEach((q) => {
-      if (answers[q._id] && q.correctAnswer) {
-        if (
-          answers[q._id].toString().toLowerCase() ===
-          q.correctAnswer.toString().toLowerCase()
-        ) {
-          correctCount++;
-        }
-      }
-    });
-    setScore(correctCount);
-    setShowResults(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' }); 
-  };
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/',{ replace: true });
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(track => track.stop());
+      console.log('Camera and microphone stopped on submit.');
+    }
+    alert('Your exam has been submitted.');
+    navigate('/login', { replace: true });
   };
 
   if (loading) {
@@ -96,61 +116,26 @@ const Exam = () => {
     return <div className="p-8 bg-gray-900 text-white min-h-screen">Error: {error}</div>;
   }
 
-  if (showResults) {
-    return (
-      <div className="p-8 bg-gray-900 text-white min-h-screen flex flex-col justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-6">Exam Results</h1>
-          <p className="mb-4 text-lg">
-            Your Correct answer <span className="font-semibold">{score}</span> out of{' '}
-            <span className="font-semibold">{questions.length}</span> questions .
-          </p>
-          <ol className="list-decimal list-inside space-y-4">
-            {questions.map((q) => {
-              const userAnswer = answers[q._id] || 'No answer';
-              const correctAnswer = q.correctAnswer || 'No correct answer provided';
-              const isCorrect =
-                userAnswer.toString().toLowerCase() === correctAnswer.toString().toLowerCase();
-
-              return (
-                <li key={q._id} className="bg-gray-800 p-4 rounded shadow">
-                  <p className="font-semibold">{q.questionText}</p>
-                  <p>
-                    Your answer:{' '}
-                    <span className={isCorrect ? 'text-green-400' : 'text-red-400'}>
-                      {userAnswer}
-                    </span>
-                  </p>
-                  {!isCorrect && (
-                    <p>
-                      Correct answer:{' '}
-                      <span className="text-green-400">{correctAnswer}</span>
-                    </p>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-
-        <div className="mt-8 text-center">
-          <button
-            onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded text-white font-bold cursor-pointer"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-8 bg-gray-900 text-white min-h-screen">
+    <div className="p-8 bg-gray-900 text-white min-h-screen relative">
       <h1 className="text-2xl mb-4 font-bold">Exam ID: {examId}</h1>
       <p className="mb-4 text-lg">
         Time Left: <span className="font-semibold">{timeLeft}s</span>
       </p>
+
+      <div
+        className="fixed top-4 right-4 w-24 h-24 rounded-full overflow-hidden border-4 border-blue-600 shadow-lg"
+        style={{ zIndex: 1000 }}
+      >
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      </div>
+
       <ol className="list-decimal list-inside space-y-6">
         {questions.length > 0 ? (
           questions.map((q) => (
@@ -211,7 +196,7 @@ const Exam = () => {
           <p>No questions available.</p>
         )}
       </ol>
-      <div className="mt-8">
+      <div className="mt-8 flex justify-center">
         <button
           onClick={handleSubmit}
           className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded text-white font-bold cursor-pointer"

@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [showModal, setShowModal] = useState(false);
     const { setUser } = useAuth();
@@ -82,18 +83,27 @@ const Login = () => {
                                     required
                                 />
                             </div>
-                            <div className="mb-4">
+
+                            <div className="mb-4 relative">
                                 <label htmlFor="password" className="block text-sm mb-2">Password</label>
                                 <input
-                                    type="password"
+                                    type={showPassword ? 'text' : 'password'}
                                     id="password"
-                                    className="w-full p-2 rounded bg-gray-700 text-white"
+                                    className="w-full p-2 rounded bg-gray-700 text-white pr-10"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
                                     minLength={8}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-2 top-9 text-gray-400 hover:text-white focus:outline-none hover:cursor-pointer"
+                                >
+                                    {showPassword ? '🙈' : '👁️'}
+                                </button>
                             </div>
+
                             <button
                                 type="submit"
                                 className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 cursor-pointer"
@@ -101,8 +111,6 @@ const Login = () => {
                                 Login
                             </button>
                         </form>
-
-                        
                     </div>
                 </div>
             </div>
