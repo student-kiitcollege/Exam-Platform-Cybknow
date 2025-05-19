@@ -40,7 +40,7 @@ const Login = () => {
     }
   };
 
-  const handleStartExam = () => {
+  const handleAgree = () => {
     setShowModal(false);
     navigate('/dashboard');
   };
@@ -116,18 +116,34 @@ const Login = () => {
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white text-black p-6 rounded-lg shadow-md w-80 text-center">
-            <h2 className="text-xl font-semibold mb-4">Ready to Start the Exam?</h2>
-            <div className="flex justify-between gap-4">
+          <div className="bg-white text-black p-6 rounded-lg shadow-md w-full max-w-lg">
+            <h2 className="text-xl font-semibold mb-4 text-center">Before You Begin the Exam</h2>
+            <div className="text-left mb-4">
+              <h3 className="font-bold text-green-700 mb-2">✅ Do:</h3>
+              <ul className="list-disc list-inside mb-4 text-sm">
+                <li>Ensure a stable internet connection</li>
+                <li>Sit in a well-lit room</li>
+                <li>Keep your camera and microphone enabled</li>
+                <li>Maintain academic integrity throughout the exam</li>
+              </ul>
+              <h3 className="font-bold text-red-700 mb-2">❌ Don't:</h3>
+              <ul className="list-disc list-inside text-sm">
+                <li>Use mobile phones or unauthorized devices</li>
+                <li>Switch tabs or open new windows</li>
+                <li>Communicate with others during the exam</li>
+                <li>Attempt to cheat or impersonate someone</li>
+              </ul>
+            </div>
+            <div className="flex justify-between gap-4 mt-6">
               <button
-                onClick={handleStartExam}
+                onClick={handleAgree}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded w-full cursor-pointer"
               >
-                Start Exam
+                I Agree
               </button>
               <button
                 onClick={handleCancel}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded w-full cursor-pointer"
+                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded w-full cursor-pointer"
               >
                 Cancel
               </button>

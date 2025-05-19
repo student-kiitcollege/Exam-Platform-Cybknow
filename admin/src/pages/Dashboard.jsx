@@ -28,10 +28,21 @@ const Dashboard = () => {
       setError('Please allow camera and microphone access to start the exam.');
       return;
     }
-    navigate('/exam/123'); // no need to pass mediaStream
+
+    const docElm = document.documentElement;
+    if (docElm.requestFullscreen) {
+      docElm.requestFullscreen();
+    } else if (docElm.mozRequestFullScreen) {
+      docElm.mozRequestFullScreen();
+    } else if (docElm.webkitRequestFullscreen) {
+      docElm.webkitRequestFullscreen();
+    } else if (docElm.msRequestFullscreen) {
+      docElm.msRequestFullscreen();
+    }
+
+    navigate('/exam/123');
   };
 
-  // Cleanup on unmount (if user leaves dashboard without starting exam)
   useEffect(() => {
     return () => {
       if (mediaStream) {
