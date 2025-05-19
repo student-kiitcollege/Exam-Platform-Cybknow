@@ -14,6 +14,7 @@ const Exam = () => {
   const [mediaStream, setMediaStream] = useState(null);
 
   const videoRef = useRef(null);
+  const questionRefs = useRef([]);
 
   useEffect(() => {
     const getMediaStream = async () => {
@@ -64,6 +65,10 @@ const Exam = () => {
   }, [examId]);
 
   useEffect(() => {
+    questionRefs.current = questionRefs.current.slice(0, questions.length);
+  }, [questions]);
+
+  useEffect(() => {
     if (loading || error) return;
 
     const timer = setInterval(() => {
@@ -108,6 +113,15 @@ const Exam = () => {
     navigate('/', { replace: true });
   };
 
+  const scrollToQuestion = (index) => {
+    if (questionRefs.current[index]) {
+      questionRefs.current[index].scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  };
+
   if (loading) {
     return <div className="p-8 bg-gray-900 text-white min-h-screen">Loading questions...</div>;
   }
@@ -120,15 +134,11 @@ const Exam = () => {
     <div className="p-8 bg-gray-900 text-white min-h-screen relative">
       <h1 className="text-3xl mb-2 font-bold">Exam ID: {examId}</h1>
       <div className="mb-6 flex justify-between items-center pr-32 text-lg">
-  <p>Total Questions: <span className="font-semibold">{questions.length}</span></p>
-  <p>
-    Time Left: <span className="font-semibold text-red-400">{timeLeft}s</span>
-  </p>
-</div>
+        <p>Total Questions: <span className="font-semibold">{questions.length}</span></p>
+        <p>Time Left: <span className="font-semibold text-red-400">{timeLeft}s</span></p>
+      </div>
 
-      <div
-        className="fixed top-4 right-4 w-28 h-28 rounded-full overflow-hidden border-4 border-blue-600 shadow-lg z-50"
-      >
+      <div className="fixed top-4 right-4 w-28 h-28 rounded-full overflow-hidden border-4 border-blue-600 shadow-lg z-50">
         <video
           ref={videoRef}
           autoPlay
@@ -138,9 +148,25 @@ const Exam = () => {
         />
       </div>
 
+      <div className="mb-6 flex flex-wrap gap-3 justify-center">
+        {questions.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => scrollToQuestion(index)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-200"
+          >
+            {index + 1}
+          </button>
+        ))}
+      </div>
+
       <ol className="space-y-6">
         {questions.map((q, index) => (
-          <li key={q._id} className="bg-gray-800 p-6 rounded-2xl shadow-lg">
+          <li
+            key={q._id}
+            ref={(el) => (questionRefs.current[index] = el)}
+            className="bg-gray-800 p-6 rounded-2xl shadow-lg"
+          >
             <h2 className="text-xl font-semibold mb-4">
               Q{index + 1}. {q.questionText}
             </h2>
