@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NavbarComponent from '../Component/NavbarComponent';
 import Footer from '../Component/Footer';
-import { FaUserAlt } from "react-icons/fa";
-
+import { FaUserAlt } from "react-icons/fa"; 
+ 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [permissionGranted, setPermissionGranted] = useState(false);
