@@ -116,7 +116,7 @@ const Exam = () => {
   const scrollToQuestion = (index) => {
     if (questionRefs.current[index]) {
       questionRefs.current[index].scrollIntoView({
-        behavior: 'smooth',
+        behavior: 'auto',
         block: 'start',
       });
     }
@@ -138,22 +138,23 @@ const Exam = () => {
         <p>Time Left: <span className="font-semibold text-red-400">{timeLeft}s</span></p>
       </div>
 
-      <div className="fixed top-4 right-4 w-28 h-28 rounded-full overflow-hidden border-4 border-blue-600 shadow-lg z-50">
+      <div className="fixed top-4 right-4 w-28 h-28 overflow-hidden border-4 border-blue-600 shadow-lg z-50">
         <video
           ref={videoRef}
           autoPlay
           muted
           playsInline
           className="w-full h-full object-cover"
+          style={{ transform: 'scaleX(-1)' }}
         />
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-3 justify-center">
+      <div className="fixed top-4 right-40 flex flex-wrap gap-2 z-50">
         {questions.map((_, index) => (
           <button
             key={index}
             onClick={() => scrollToQuestion(index)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-200"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-full text-sm shadow"
           >
             {index + 1}
           </button>
@@ -227,6 +228,7 @@ const Exam = () => {
         ))}
       </ol>
 
+      {/* Submit Button */}
       <div className="mt-12 flex justify-center">
         <button
           onClick={handleSubmit}

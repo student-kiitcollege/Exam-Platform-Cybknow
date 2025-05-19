@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NavbarComponent from '../Component/NavbarComponent';
 import Footer from '../Component/Footer';
@@ -9,6 +9,7 @@ const Dashboard = () => {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [error, setError] = useState('');
   const [mediaStream, setMediaStream] = useState(null);
+  const videoRef = useRef(null);
 
   const requestPermissions = async () => {
     try {
@@ -44,6 +45,12 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
+    if (videoRef.current && mediaStream) {
+      videoRef.current.srcObject = mediaStream;
+    }
+  }, [mediaStream]);
+
+  useEffect(() => {
     return () => {
       if (mediaStream) {
         mediaStream.getTracks().forEach(track => track.stop());
@@ -62,6 +69,8 @@ const Dashboard = () => {
     <div className="min-h-screen flex flex-col">
       <NavbarComponent />
       <main className="flex-grow p-4 bg-gray-100">
+
+        {/* NAV */}
         <nav className="bg-gray-800 text-white p-4 flex justify-between items-center rounded-md mb-6 shadow">
           <div className="flex items-center space-x-6">
             <span className="text-lg font-semibold">Total Time: {examInfo.timeLeft}</span>
@@ -75,28 +84,41 @@ const Dashboard = () => {
 
         {error && <div className="bg-red-100 text-red-800 px-4 py-2 rounded mb-4">{error}</div>}
 
-        <section className="bg-white shadow-md rounded-md p-6 mb-6">
-          <h1 className="text-3xl font-bold mb-4 text-gray-800">Ready To Start</h1>
-          <ul className="text-lg text-gray-700 mb-6 space-y-2">
-            <li><strong>Total Questions:</strong> {examInfo.totalQuestions}</li>
-            <li><strong>Total Marks:</strong> {examInfo.totalMarks}</li>
-            <li><strong>Negative Marking:</strong> {examInfo.negativeMarking}</li>
-          </ul>
+        <section className="bg-white shadow-md rounded-md p-6 mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-4 text-gray-800">Ready To Start</h1>
+            <ul className="text-lg text-gray-700 mb-6 space-y-2">
+              <li><strong>Total Questions:</strong> {examInfo.totalQuestions}</li>
+              <li><strong>Total Marks:</strong> {examInfo.totalMarks}</li>
+              <li><strong>Negative Marking:</strong> {examInfo.negativeMarking}</li>
+            </ul>
 
-          {!permissionGranted ? (
-            <button
-              onClick={requestPermissions}
-              className="font-semibold px-6 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
-            >
-              Allow Camera & Microphone
-            </button>
-          ) : (
-            <button
-              onClick={handleStartExam}
-              className="font-semibold px-6 py-2 rounded bg-green-600 hover:bg-green-700 text-white cursor-pointer"
-            >
-              Start Exam
-            </button>
+            {!permissionGranted ? (
+              <button
+                onClick={requestPermissions}
+                className="font-semibold px-6 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+              >
+                Allow Camera & Microphone
+              </button>
+            ) : (
+              <button
+                onClick={handleStartExam}
+                className="font-semibold px-6 py-2 rounded bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+              >
+                Start Exam
+              </button>
+            )}
+          </div>
+
+          {permissionGranted && (
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-32 h-32 border-2 border-green-500"
+              style={{ objectFit: 'cover', borderRadius: '0', transform: 'scaleX(-1)'}} // square video, no rounded corners
+            />
           )}
         </section>
 
