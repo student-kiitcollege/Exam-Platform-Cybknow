@@ -118,90 +118,95 @@ const Exam = () => {
 
   return (
     <div className="p-8 bg-gray-900 text-white min-h-screen relative">
-      <h1 className="text-2xl mb-4 font-bold">Exam ID: {examId}</h1>
-      <p className="mb-4 text-lg">
-        Time Left: <span className="font-semibold">{timeLeft}s</span>
-      </p>
+      <h1 className="text-3xl mb-2 font-bold">Exam ID: {examId}</h1>
+      <div className="mb-6 flex justify-between items-center pr-32 text-lg">
+  <p>Total Questions: <span className="font-semibold">{questions.length}</span></p>
+  <p>
+    Time Left: <span className="font-semibold text-red-400">{timeLeft}s</span>
+  </p>
+</div>
 
       <div
-        className="fixed top-4 right-4 w-24 h-24 rounded-full overflow-hidden border-4 border-blue-600 shadow-lg"
-        style={{ zIndex: 1000 }}
+        className="fixed top-4 right-4 w-28 h-28 rounded-full overflow-hidden border-4 border-blue-600 shadow-lg z-50"
       >
         <video
           ref={videoRef}
           autoPlay
           muted
           playsInline
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          className="w-full h-full object-cover"
         />
       </div>
 
-      <ol className="list-decimal list-inside space-y-6">
-        {questions.length > 0 ? (
-          questions.map((q) => (
-            <li key={q._id} className="bg-gray-800 p-2 rounded shadow">
-              <span>{q.questionText}</span>
+      <ol className="space-y-6">
+        {questions.map((q, index) => (
+          <li key={q._id} className="bg-gray-800 p-6 rounded-2xl shadow-lg">
+            <h2 className="text-xl font-semibold mb-4">
+              Q{index + 1}. {q.questionText}
+            </h2>
 
-              {q.type === 'mcq' && Array.isArray(q.options) && q.options.length > 0 ? (
-                q.options.map((opt, idx) => (
-                  <label
-                    key={`${q._id}-${idx}`}
-                    className={`block p-2 rounded mb-2 cursor-pointer transition-colors duration-200 ${
-                      answers[q._id] === opt ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={q._id}
-                      value={opt}
-                      onChange={(e) => handleChange(q._id, e.target.value)}
-                      className="mr-2"
-                      checked={answers[q._id] === opt}
-                    />
-                    {opt}
-                  </label>
-                ))
-              ) : q.type === 'boolean' ? (
-                ['True', 'False'].map((opt, idx) => (
-                  <label
-                    key={`${q._id}-${idx}`}
-                    className={`block p-2 rounded mb-2 cursor-pointer transition-colors duration-200 ${
-                      answers[q._id] === opt ? 'bg-blue-600' : 'bg-gray-700 hover:bg-gray-600'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={q._id}
-                      value={opt}
-                      onChange={(e) => handleChange(q._id, e.target.value)}
-                      className="mr-2"
-                      checked={answers[q._id] === opt}
-                    />
-                    {opt}
-                  </label>
-                ))
-              ) : q.type === 'short' ? (
-                <input
-                  type="text"
-                  className="w-full p-2 bg-gray-700 mt-2 rounded text-white"
-                  onChange={(e) => handleChange(q._id, e.target.value)}
-                  value={answers[q._id] || ''}
-                />
-              ) : (
-                <p>No options available for this question.</p>
-              )}
-            </li>
-          ))
-        ) : (
-          <p>No questions available.</p>
-        )}
+            {q.type === 'mcq' && Array.isArray(q.options) && q.options.length > 0 ? (
+              q.options.map((opt, idx) => (
+                <label
+                  key={`${q._id}-${idx}`}
+                  className={`block px-4 py-2 rounded-lg mb-2 cursor-pointer border transition-all duration-200 ${
+                    answers[q._id] === opt
+                      ? 'bg-blue-600 border-blue-400'
+                      : 'bg-gray-700 hover:bg-gray-600 border-gray-600'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name={q._id}
+                    value={opt}
+                    onChange={(e) => handleChange(q._id, e.target.value)}
+                    checked={answers[q._id] === opt}
+                    className="mr-2"
+                  />
+                  {opt}
+                </label>
+              ))
+            ) : q.type === 'boolean' ? (
+              ['True', 'False'].map((opt, idx) => (
+                <label
+                  key={`${q._id}-${idx}`}
+                  className={`block px-4 py-2 rounded-lg mb-2 cursor-pointer border transition-all duration-200 ${
+                    answers[q._id] === opt
+                      ? 'bg-blue-600 border-blue-400'
+                      : 'bg-gray-700 hover:bg-gray-600 border-gray-600'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name={q._id}
+                    value={opt}
+                    onChange={(e) => handleChange(q._id, e.target.value)}
+                    checked={answers[q._id] === opt}
+                    className="mr-2"
+                  />
+                  {opt}
+                </label>
+              ))
+            ) : q.type === 'short' ? (
+              <input
+                type="text"
+                className="w-full p-3 bg-gray-700 mt-2 rounded-lg text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => handleChange(q._id, e.target.value)}
+                value={answers[q._id] || ''}
+              />
+            ) : (
+              <p className="text-red-400">No options available for this question.</p>
+            )}
+          </li>
+        ))}
       </ol>
-      <div className="mt-8 flex justify-center">
+
+      <div className="mt-12 flex justify-center">
         <button
           onClick={handleSubmit}
-          className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded text-white font-bold cursor-pointer"
+          className="bg-green-600 hover:bg-green-700 px-8 py-4 rounded-xl text-white font-bold shadow-md transition-all duration-200 hover:cursor-pointer"
         >
-          Submit
+          Submit Exam
         </button>
       </div>
     </div>
