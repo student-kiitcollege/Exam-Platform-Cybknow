@@ -105,7 +105,7 @@ const Exam = () => {
       console.log('Camera and microphone stopped on submit.');
     }
     alert('Your exam has been submitted.');
-    navigate('/login', { replace: true });
+    navigate('/', { replace: true });
   };
 
   if (loading) {
