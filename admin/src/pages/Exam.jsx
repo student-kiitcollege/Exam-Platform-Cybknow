@@ -110,7 +110,7 @@ const Exam = () => {
       console.log('Camera and microphone stopped on submit.');
     }
     alert('Your exam has been submitted.');
-    navigate('/', { replace: true });
+    navigate('/dashboard', { replace: true });
   };
 
   const scrollToQuestion = (index) => {
@@ -228,7 +228,6 @@ const Exam = () => {
         ))}
       </ol>
 
-      {/* Submit Button */}
       <div className="mt-12 flex justify-center">
         <button
           onClick={handleSubmit}

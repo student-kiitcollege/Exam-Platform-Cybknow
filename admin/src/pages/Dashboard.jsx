@@ -3,13 +3,48 @@ import { useNavigate } from 'react-router-dom';
 import NavbarComponent from '../Component/NavbarComponent';
 import Footer from '../Component/Footer';
 import { FaUserAlt } from "react-icons/fa"; 
- 
+import { useAuth } from '../contexts/AuthContext';
+
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user, setUser } = useAuth();
+
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [error, setError] = useState('');
   const [mediaStream, setMediaStream] = useState(null);
   const videoRef = useRef(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (videoRef.current && mediaStream) {
+      videoRef.current.srcObject = mediaStream;
+    }
+  }, [mediaStream]);
+
+  useEffect(() => {
+    return () => {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [mediaStream]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      navigate('/dashboard', { replace: true });
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [navigate]);
 
   const requestPermissions = async () => {
     try {
@@ -41,22 +76,16 @@ const Dashboard = () => {
       docElm.msRequestFullscreen();
     }
 
-    navigate('/exam/123');
+    navigate('/exam/123');  
   };
 
-  useEffect(() => {
-    if (videoRef.current && mediaStream) {
-      videoRef.current.srcObject = mediaStream;
+  const handleLogout = () => {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach(track => track.stop());
     }
-  }, [mediaStream]);
-
-  useEffect(() => {
-    return () => {
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [mediaStream]);
+    setUser(null); 
+    navigate('/', { replace: true });
+  };
 
   const examInfo = {
     timeLeft: "60s",
@@ -68,21 +97,28 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <NavbarComponent />
-      <main className="flex-grow p-4 bg-gray-100">
 
-        {/* NAV */}
+      <main className="flex-grow p-4 bg-gray-100">
         <nav className="bg-gray-800 text-white p-4 flex justify-between items-center rounded-md mb-6 shadow">
           <div className="flex items-center space-x-6">
             <span className="text-lg font-semibold">Total Time: {examInfo.timeLeft}</span>
             <span className="text-lg font-semibold">Total Questions: {examInfo.totalQuestions}</span>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-4">
             <FaUserAlt className="text-xl" />
-            <span className="text-lg font-semibold">User Name</span>
+            <span className="text-lg font-semibold">{user?.email || 'User'}</span>
+            <button
+              onClick={handleLogout}
+              className="ml-4 bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-white text-sm hover:cursor-pointer"
+            >
+              Logout
+            </button>
           </div>
         </nav>
 
-        {error && <div className="bg-red-100 text-red-800 px-4 py-2 rounded mb-4">{error}</div>}
+        {error && (
+          <div className="bg-red-100 text-red-800 px-4 py-2 rounded mb-4">{error}</div>
+        )}
 
         <section className="bg-white shadow-md rounded-md p-6 mb-6 flex items-center justify-between">
           <div>
@@ -117,7 +153,7 @@ const Dashboard = () => {
               muted
               playsInline
               className="w-32 h-32 border-2 border-green-500"
-              style={{ objectFit: 'cover', borderRadius: '0', transform: 'scaleX(-1)'}} // square video, no rounded corners
+              style={{ objectFit: 'cover', borderRadius: 0, transform: 'scaleX(-1)' }} // flipped video preview
             />
           )}
         </section>
@@ -135,6 +171,7 @@ const Dashboard = () => {
           </ul>
         </section>
       </main>
+
       <Footer />
     </div>
   );

@@ -8,8 +8,12 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const { setUser } = useAuth();
+
+  const { login } = useAuth(); 
   const navigate = useNavigate();
+
+  const [tempUser, setTempUser] = useState(null);
+  const [tempToken, setTempToken] = useState(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -32,7 +36,10 @@ const Login = () => {
       }
 
       const data = await res.json();
-      setUser({ email: data.email, role: data.role });
+
+      setTempUser({ email: data.email, role: data.role });
+      setTempToken(data.token);
+
       setShowModal(true);
       setError('');
     } catch (err) {
@@ -41,6 +48,9 @@ const Login = () => {
   };
 
   const handleAgree = () => {
+    if (tempUser && tempToken) {
+      login(tempUser, tempToken); 
+    }
     setShowModal(false);
     navigate('/dashboard');
   };

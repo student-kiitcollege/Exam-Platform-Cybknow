@@ -1,20 +1,46 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Exam from './pages/Exam';
-import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './Component/ProtectedRoute';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-const App = () => (
-  <AuthProvider>
-    <Router>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/exam/:examId" element={<Exam />} />
-      </Routes>
-    </Router>
-  </AuthProvider>
-);
+function AppRoutes() {
+  const { user, token } = useAuth();
+
+  return (
+    <Routes>
+      <Route path="/" element={user && token ? <Navigate to="/dashboard" replace /> : <Login />} />
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/exam/:examId"
+        element={
+          <ProtectedRoute>
+            <Exam />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </AuthProvider>
+  );
+}
 
 export default App;
