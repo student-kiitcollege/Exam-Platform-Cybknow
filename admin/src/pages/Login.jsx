@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -9,7 +10,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
 
-  const { login } = useAuth(); 
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const [tempUser, setTempUser] = useState(null);
@@ -36,10 +37,8 @@ const Login = () => {
       }
 
       const data = await res.json();
-
       setTempUser({ email: data.email, role: data.role });
       setTempToken(data.token);
-
       setShowModal(true);
       setError('');
     } catch (err) {
@@ -49,7 +48,7 @@ const Login = () => {
 
   const handleAgree = () => {
     if (tempUser && tempToken) {
-      login(tempUser, tempToken); 
+      login(tempUser, tempToken);
     }
     setShowModal(false);
     navigate('/dashboard');
@@ -78,7 +77,7 @@ const Login = () => {
 
         <div className="w-1/2 flex items-center justify-center p-8">
           <div className="bg-gray-800 p-6 rounded shadow-md w-full max-w-sm">
-            <h1 className="text-2xl mb-4 text-center">Login</h1>
+            <h1 className="text-2xl mb-4 text-center">Student Login</h1>
             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
             <form onSubmit={handleLogin}>
               <div className="mb-4">
@@ -107,9 +106,9 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2 top-9 text-gray-400 hover:text-white focus:outline-none hover:cursor-pointer"
+                  className="absolute right-2 top-9 text-gray-400 hover:text-white focus:outline-none"
                 >
-                  {showPassword ? '🙈' : '👁️'}
+                  {showPassword ?  <FaEye size={18} /> : <FaEyeSlash size={18} /> }
                 </button>
               </div>
 
@@ -124,6 +123,7 @@ const Login = () => {
         </div>
       </div>
 
+      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white text-black p-6 rounded-lg shadow-md w-full max-w-lg">
@@ -147,18 +147,18 @@ const Login = () => {
             <div className="flex justify-between gap-4 mt-6">
               <button
                 onClick={handleAgree}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded w-full cursor-pointer"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded w-full hover:cursor-pointer"
               >
                 I Agree
               </button>
               <button
                 onClick={handleCancel}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded w-full cursor-pointer"
+                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded w-full hover:cursor-pointer"
               >
                 Cancel
               </button>
             </div>
-          </div>  
+          </div>
         </div>
       )}
     </div>
