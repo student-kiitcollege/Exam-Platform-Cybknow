@@ -2,14 +2,21 @@ const Question = require('../models/Question');
 
 
 exports.getQuestions = async (req, res) => {
-  const { examId } = req.query; 
+  const userEmail = req.query.email;  // get email from query param
+
   try {
-    const questions = await Question.find({ examId }); 
+    let questions;
+    if (userEmail) {
+      questions = await Question.find({ assignedToEmails: userEmail });
+    } else {
+      questions = await Question.find(); // or return empty or error
+    }
     res.json(questions);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 
 exports.getQuestionById = async (req, res) => {
@@ -31,6 +38,29 @@ exports.createQuestion = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+exports.createMultipleQuestions = async (req, res) => {
+  try {
+    const questions = req.body.questions; // array of question objects
+    if (!questions || !Array.isArray(questions)) {
+      return res.status(400).json({ error: 'Invalid questions data' });
+    }
+    await Question.insertMany(questions);
+    res.status(201).json({ message: 'Questions created successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create questions' });
+  }
+};
+
+exports.updateQuestion = async (req, res) => {
+  try {
+    const updatedQuestion = await Question.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updatedQuestion) return res.status(404).json({ error: 'Question not found' });
+    res.json({ message: 'Question updated', updatedQuestion });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update question' });
+  }
+};
+
 
 exports.updateQuestion = async (req, res) => {
   try {

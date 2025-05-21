@@ -1,9 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext'; // adjust path as needed
 
 const Exam = () => { 
   const { examId } = useParams();
   const navigate = useNavigate();
+
+  const { user } = useAuth(); // user = { email, role }
 
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
@@ -42,7 +45,15 @@ const Exam = () => {
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/questions/getquestions`);
+        const url = new URL('http://localhost:5000/api/questions/getquestions');
+        if (user?.email) {
+          url.searchParams.append('email', user.email);
+        }
+        if (examId) {
+          url.searchParams.append('examId', examId);
+        }
+
+        const response = await fetch(url.toString());
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -56,13 +67,13 @@ const Exam = () => {
       }
     };
 
-    if (examId) {
+    if (examId && user?.email) {
       fetchQuestions();
-    } else {
+    } else if (!examId) {
       setError('Invalid exam ID.');
       setLoading(false);
     }
-  }, [examId]);
+  }, [examId, user?.email]);
 
   useEffect(() => {
     questionRefs.current = questionRefs.current.slice(0, questions.length);
