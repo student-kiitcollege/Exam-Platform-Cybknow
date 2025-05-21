@@ -1,13 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // adjust path as needed
+import { useAuth } from '../contexts/AuthContext'; 
 
 const Exam = () => { 
   const { examId } = useParams();
   const navigate = useNavigate();
 
-  const { user } = useAuth(); // user = { email, role }
-
+  const { user } = useAuth(); 
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(60);

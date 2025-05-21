@@ -2,14 +2,14 @@ const Question = require('../models/Question');
 
 
 exports.getQuestions = async (req, res) => {
-  const userEmail = req.query.email;  // get email from query param
+  const userEmail = req.query.email;  
 
   try {
     let questions;
     if (userEmail) {
       questions = await Question.find({ assignedToEmails: userEmail });
     } else {
-      questions = await Question.find(); // or return empty or error
+      questions = await Question.find(); 
     }
     res.json(questions);
   } catch (err) {
@@ -40,7 +40,7 @@ exports.createQuestion = async (req, res) => {
 };
 exports.createMultipleQuestions = async (req, res) => {
   try {
-    const questions = req.body.questions; // array of question objects
+    const questions = req.body.questions; 
     if (!questions || !Array.isArray(questions)) {
       return res.status(400).json({ error: 'Invalid questions data' });
     }
@@ -72,7 +72,6 @@ exports.updateQuestion = async (req, res) => {
   }
 };
 
-// Delete question
 exports.deleteQuestion = async (req, res) => {
   try {
     const deleted = await Question.findByIdAndDelete(req.params.id);
