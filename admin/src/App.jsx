@@ -2,8 +2,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Exam from './pages/Exam';
+import TeacherLogin from './pages/TeacherLogin'; // ✅ NEW Import
 import ProtectedRoute from './Component/ProtectedRoute';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import TeacherDashboard from './pages/TeacherDashboard';
+import MonitoringPanel from './pages/MonitoringPanel';
 
 function AppRoutes() {
   const { user, token } = useAuth();
@@ -11,6 +14,12 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={user && token ? <Navigate to="/dashboard" replace /> : <Login />} />
+
+      <Route path="/teacher-login" element={<TeacherLogin />} /> {/* ✅ NEW Route */}
+      <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
+      <Route path="/monitoring" element={<MonitoringPanel />} />
+
+
 
       <Route
         path="/dashboard"
@@ -20,7 +29,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/exam/:examId"
         element={

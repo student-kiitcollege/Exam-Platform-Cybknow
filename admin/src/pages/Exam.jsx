@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; 
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
-const Exam = () => { 
-  const { examId } = useParams();
+const Exam = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const { user } = useAuth(); 
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(60);
@@ -48,9 +47,6 @@ const Exam = () => {
         if (user?.email) {
           url.searchParams.append('email', user.email);
         }
-        if (examId) {
-          url.searchParams.append('examId', examId);
-        }
 
         const response = await fetch(url.toString());
         if (!response.ok) {
@@ -66,13 +62,13 @@ const Exam = () => {
       }
     };
 
-    if (examId && user?.email) {
+    if (user?.email) {
       fetchQuestions();
-    } else if (!examId) {
-      setError('Invalid exam ID.');
+    } else {
+      setError('User not logged in.');
       setLoading(false);
     }
-  }, [examId, user?.email]);
+  }, [user?.email]);
 
   useEffect(() => {
     questionRefs.current = questionRefs.current.slice(0, questions.length);
@@ -114,13 +110,50 @@ const Exam = () => {
     setAnswers((prevAnswers) => ({ ...prevAnswers, [id]: value }));
   };
 
-  const handleSubmit = () => {
-    if (mediaStream) {
-      mediaStream.getTracks().forEach(track => track.stop());
-      console.log('Camera and microphone stopped on submit.');
+  const handleSubmit = async () => {
+    try {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        console.log('Camera and microphone stopped on submit.');
+      }
+
+      for (const q of questions) {
+        if (!answers[q._id] || answers[q._id].toString().trim() === '') {
+          alert(`Please answer question ${q._id} before submitting.`);
+          return;
+        }
+      }
+
+      const formattedAnswers = questions.map(q => ({
+        questionId: q._id,
+        answer: answers[q._id],
+      }));
+
+      const payload = {
+        studentEmail: user?.email,
+        answers: formattedAnswers,
+      };
+
+      const response = await fetch('http://localhost:5000/api/submission/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Submission failed.');
+      }
+
+      alert('Your exam has been submitted successfully.');
+      navigate('/dashboard', { replace: true });
+
+    } catch (err) {
+      console.error('Error submitting exam:', err);
+      alert('Failed to submit exam. Please try again.');
     }
-    alert('Your exam has been submitted.');
-    navigate('/dashboard', { replace: true });
   };
 
   const scrollToQuestion = (index) => {
@@ -142,7 +175,7 @@ const Exam = () => {
 
   return (
     <div className="p-8 bg-gray-900 text-white min-h-screen relative">
-      <h1 className="text-3xl mb-2 font-bold">Exam ID: {examId}</h1>
+      <h1 className="text-3xl mb-2 font-bold">Student Email: {user?.email}</h1>
       <div className="mb-6 flex justify-between items-center pr-32 text-lg">
         <p>Total Questions: <span className="font-semibold">{questions.length}</span></p>
         <p>Time Left: <span className="font-semibold text-red-400">{timeLeft}s</span></p>

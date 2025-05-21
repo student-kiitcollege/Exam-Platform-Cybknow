@@ -14,4 +14,6 @@ router.put('/getupdate/:id', questionController.updateQuestion);
 
 router.delete('/delete/:id', questionController.deleteQuestion);
 
+
+
 module.exports = router;

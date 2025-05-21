@@ -1,4 +1,6 @@
 const Question = require('../models/Question');
+const Submission = require('../models/Submission');
+
 
 
 exports.getQuestions = async (req, res) => {
@@ -79,5 +81,29 @@ exports.deleteQuestion = async (req, res) => {
     res.json({ message: 'Deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.submitAnswers = async (req, res) => {
+  try {
+    const { studentEmail, answers } = req.body;
+
+    if (!studentEmail || !answers || !Array.isArray(answers)) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const submission = new Submission({
+      studentEmail,
+      answers,
+      submittedAt: new Date()
+    });
+
+    await submission.save();
+
+    res.status(201).json({ message: 'Submission saved successfully' });
+  } catch (error) {
+    console.error('Submit error:', error);
+    res.status(500).json({ error: 'Failed to save submission' });
   }
 };

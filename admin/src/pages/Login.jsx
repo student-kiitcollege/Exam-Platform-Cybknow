@@ -31,12 +31,16 @@ const Login = () => {
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error || 'Login failed');
       }
 
-      const data = await res.json();
+      if (data.role !== 'student') {
+        setError('Access denied. Only students can log in here.');
+        return;
+      }
+
       setTempUser({ email: data.email, role: data.role });
       setTempToken(data.token);
       setShowModal(true);
@@ -108,7 +112,7 @@ const Login = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-2 top-9 text-gray-400 hover:text-white focus:outline-none"
                 >
-                  {showPassword ?  <FaEye size={18} /> : <FaEyeSlash size={18} /> }
+                  {showPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
                 </button>
               </div>
 
@@ -119,11 +123,24 @@ const Login = () => {
                 Login
               </button>
             </form>
+
+            <div className="flex items-center my-6">
+              <div className="flex-grow border-t border-gray-600"></div>
+              <span className="mx-4 text-gray-400 text-sm">OR</span>
+              <div className="flex-grow border-t border-gray-600"></div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate('/teacher-login')}
+              className="w-full py-2 bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 text-white font-semibold rounded-lg shadow-lg hover:opacity-90 transition-all duration-300 ease-in-out cursor-pointer"
+            >
+              👨‍🏫 Teacher Login
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white text-black p-6 rounded-lg shadow-md w-full max-w-lg">
