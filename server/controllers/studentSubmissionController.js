@@ -1,38 +1,33 @@
 const Submission = require('../models/Submission');
-const Question = require('../models/Question'); // Make sure you have this model
+const Question = require('../models/Question');
 
-// Submit exam answers
 exports.submitExam = async (req, res) => {
   try {
-    const { studentEmail, answers } = req.body;
+    const { studentEmail, answers, snapshots } = req.body;
 
     if (!studentEmail || typeof studentEmail !== 'string') {
       return res.status(400).json({ error: 'Invalid or missing studentEmail' });
     }
-
-    if (!Array.isArray(answers)) {
-      return res.status(400).json({ error: 'Answers must be an array' });
+    if (!Array.isArray(answers) || answers.length === 0) {
+      return res.status(400).json({ error: 'Answers must be a non-empty array' });
     }
 
-    if (answers.length === 0) {
-      return res.status(400).json({ error: 'Answers array cannot be empty' });
-    }
+    const normalizedAnswers = answers.map(ans => ({
+      questionId: ans.questionId,
+      answer: typeof ans.answer === 'string' ? ans.answer : '',
+    }));
 
-    // Normalize answers to ensure 'answer' is always a string (even empty)
-    const normalizedAnswers = answers.map(ans => {
-      if (!ans.questionId || typeof ans.questionId !== 'string') {
-        throw new Error('Each answer must have a valid questionId string');
-      }
-
-      return {
-        questionId: ans.questionId,
-        answer: typeof ans.answer === 'string' ? ans.answer : '',
-      };
-    });
+    const normalizedSnapshots = Array.isArray(snapshots)
+      ? snapshots.map(snap => ({
+          image: typeof snap.image === 'string' ? snap.image : '',
+          timestamp: snap.timestamp ? new Date(snap.timestamp) : new Date(),
+        }))
+      : [];
 
     const submission = new Submission({
       studentEmail,
       answers: normalizedAnswers,
+      snapshots: normalizedSnapshots,
       submittedAt: new Date(),
     });
 
@@ -45,7 +40,6 @@ exports.submitExam = async (req, res) => {
   }
 };
 
-// Get submission by student email
 exports.getSubmissionByStudent = async (req, res) => {
   try {
     const { studentEmail } = req.params;
@@ -55,7 +49,6 @@ exports.getSubmissionByStudent = async (req, res) => {
     }
 
     const submission = await Submission.findOne({ studentEmail });
-
     if (!submission) {
       return res.status(404).json({ error: 'Submission not found for this student' });
     }
@@ -67,32 +60,24 @@ exports.getSubmissionByStudent = async (req, res) => {
   }
 };
 
-// Get all submissions (admin) - UPDATED TO INCLUDE QUESTION DETAILS
 exports.getAllSubmissions = async (req, res) => {
   try {
-    // Fetch all submissions
     const submissions = await Submission.find();
 
-    // Collect unique questionIds from all answers
     const questionIdsSet = new Set();
     submissions.forEach(sub => {
       sub.answers.forEach(ans => {
         questionIdsSet.add(ans.questionId);
       });
     });
-
     const questionIds = Array.from(questionIdsSet);
-
-    // Fetch questions matching these IDs
     const questions = await Question.find({ _id: { $in: questionIds } });
 
-    // Create a map for quick lookup by questionId
     const questionMap = {};
     questions.forEach(q => {
       questionMap[q._id.toString()] = q;
     });
 
-    // Attach question details to each answer in submissions
     const enrichedSubmissions = submissions.map(sub => {
       const enrichedAnswers = sub.answers.map(ans => {
         const q = questionMap[ans.questionId];
@@ -111,12 +96,32 @@ exports.getAllSubmissions = async (req, res) => {
       return {
         ...sub._doc,
         answers: enrichedAnswers,
+        snapshots: sub.snapshots.map(snap => ({
+          image: snap.image,
+          timestamp: snap.timestamp,
+        })),
       };
     });
 
     return res.status(200).json(enrichedSubmissions);
   } catch (error) {
     console.error('Error fetching all submissions:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.deleteSubmissionById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedSubmission = await Submission.findByIdAndDelete(id);
+    if (!deletedSubmission) {
+      return res.status(404).json({ error: 'Submission not found' });
+    }
+
+    return res.status(200).json({ message: 'Submission deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting submission:', error);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 };

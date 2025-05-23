@@ -8,5 +8,6 @@ router.get('/submission/:studentEmail', submissionController.getSubmissionByStud
 
 router.get('/getAll', submissionController.getAllSubmissions);
 
+router.delete('/delete/:id', submissionController.deleteSubmissionById);
 
 module.exports = router;

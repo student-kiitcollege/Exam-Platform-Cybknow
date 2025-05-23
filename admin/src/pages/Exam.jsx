@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Webcam from 'react-webcam';
 
 const Exam = () => {
   const navigate = useNavigate();
@@ -12,34 +13,13 @@ const Exam = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isTimeUp, setIsTimeUp] = useState(false);
-  const [mediaStream, setMediaStream] = useState(null);
+  const [snapshots, setSnapshots] = useState([]);
 
-  const videoRef = useRef(null);
+  const webcamRef = useRef(null);
   const questionRefs = useRef([]);
+  const snapshotIntervalRef = useRef(null);
 
-  useEffect(() => {
-    const getMediaStream = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        setMediaStream(stream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (err) {
-        console.error('Failed to get media stream on exam start:', err);
-        alert('Camera and microphone permission are required to take the exam.');
-        navigate('/', { replace: true });
-      }
-    };
-    getMediaStream();
-  }, [navigate]);
-
-  useEffect(() => {
-    if (mediaStream && videoRef.current) {
-      videoRef.current.srcObject = mediaStream;
-    }
-  }, [mediaStream]);
-
+  // Fetch questions
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
@@ -53,6 +33,7 @@ const Exam = () => {
           const errorData = await response.json();
           throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
+
         const data = await response.json();
         setQuestions(data);
       } catch (err) {
@@ -101,36 +82,26 @@ const Exam = () => {
   }, [isTimeUp]);
 
   useEffect(() => {
+    snapshotIntervalRef.current = setInterval(() => {
+      if (webcamRef.current) {
+        const imageSrc = webcamRef.current.getScreenshot();
+        if (imageSrc) {
+          setSnapshots((prev) => [...prev, { image: imageSrc, timestamp: new Date().toISOString() }]);
+        }
+      }
+    }, 10000); 
+
     return () => {
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-        console.log('Camera and microphone stopped on unmount.');
+      if (snapshotIntervalRef.current) {
+        clearInterval(snapshotIntervalRef.current);
       }
     };
-  }, [mediaStream]);
-
-  // Toggle logic: unselect if same option clicked again
-  const handleOptionToggle = (questionId, value) => {
-    setAnswers((prevAnswers) => {
-      if (prevAnswers[questionId] === value) {
-        // Unselect option
-        const newAnswers = { ...prevAnswers };
-        delete newAnswers[questionId];
-        return newAnswers;
-      }
-      return { ...prevAnswers, [questionId]: value };
-    });
-  };
-
-  const handleChange = (id, value) => {
-    // For short text input only
-    setAnswers((prevAnswers) => ({ ...prevAnswers, [id]: value }));
-  };
+  }, []);
 
   const handleSubmit = async () => {
     try {
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
+      if (snapshotIntervalRef.current) {
+        clearInterval(snapshotIntervalRef.current);
       }
 
       const formattedAnswers = questions.map(q => ({
@@ -141,9 +112,9 @@ const Exam = () => {
       const payload = {
         studentEmail: user?.email,
         answers: formattedAnswers,
+        snapshots,
+        submittedAt: new Date().toISOString(),
       };
-
-      console.log('Submitting payload:', payload);
 
       const response = await fetch('http://localhost:5000/api/submission/submit', {
         method: 'POST',
@@ -174,6 +145,21 @@ const Exam = () => {
     }
   };
 
+  const handleOptionToggle = (questionId, value) => {
+    setAnswers((prevAnswers) => {
+      if (prevAnswers[questionId] === value) {
+        const newAnswers = { ...prevAnswers };
+        delete newAnswers[questionId];
+        return newAnswers;
+      }
+      return { ...prevAnswers, [questionId]: value };
+    });
+  };
+
+  const handleChange = (id, value) => {
+    setAnswers((prevAnswers) => ({ ...prevAnswers, [id]: value }));
+  };
+
   if (loading) {
     return <div className="p-8 bg-gray-900 text-white min-h-screen flex justify-center items-center text-xl font-semibold">Loading questions...</div>;
   }
@@ -182,7 +168,6 @@ const Exam = () => {
     return <div className="p-8 bg-gray-900 text-white min-h-screen flex justify-center items-center text-xl font-semibold">Error: {error}</div>;
   }
 
-  // Progress bar calculation for timer
   const timerPercentage = (timeLeft / 60) * 100;
   let timerColor = 'bg-green-500';
   if (timeLeft <= 10) timerColor = 'bg-red-500';
@@ -210,26 +195,22 @@ const Exam = () => {
         </div>
       </div>
 
-      {/* Video camera feed */}
       <div className="fixed top-6 right-6 w-32 h-32 rounded-xl border-4 border-blue-600 shadow-lg overflow-hidden z-50 bg-black">
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
+        <Webcam
+          audio={false}
+          ref={webcamRef}
+          screenshotFormat="image/jpeg"
+          mirrored={true}
           className="w-full h-full object-cover"
-          style={{ transform: 'scaleX(-1)' }}
         />
       </div>
 
-      {/* Question number navigation */}
       <div className="fixed top-6 right-44 flex flex-wrap gap-2 max-w-[calc(100vw-16rem)] z-50">
         {questions.map((_, index) => (
           <button
             key={index}
             onClick={() => scrollToQuestion(index)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-full text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-400"
-            aria-label={`Scroll to question ${index + 1}`}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-full text-sm shadow"
           >
             {index + 1}
           </button>
@@ -241,33 +222,22 @@ const Exam = () => {
           <li
             key={q._id}
             ref={(el) => (questionRefs.current[index] = el)}
-            className="bg-gray-800 p-8 rounded-3xl shadow-xl border border-gray-700 hover:border-blue-500 transition-all duration-300"
+            className="bg-gray-800 p-8 rounded-3xl shadow-xl border border-gray-700 hover:border-blue-500 transition-all"
           >
             <h2 className="text-2xl font-semibold mb-6">
               Q{index + 1}. {q.questionText}
             </h2>
 
-            {/* MCQ and boolean options with toggle */}
-            {(q.type === 'mcq' && Array.isArray(q.options) && q.options.length > 0) ||
-            q.type === 'boolean' ? (
+            {(q.type === 'mcq' && Array.isArray(q.options) && q.options.length > 0) || q.type === 'boolean' ? (
               ((q.type === 'boolean' ? ['True', 'False'] : q.options) || []).map((opt, idx) => {
                 const selected = answers[q._id] === opt;
                 return (
                   <div
                     key={`${q._id}-${idx}`}
                     onClick={() => handleOptionToggle(q._id, opt)}
-                    className={`select-none cursor-pointer px-5 py-3 rounded-lg mb-3 border-2 transition-all duration-300
+                    className={`cursor-pointer px-5 py-3 rounded-lg mb-3 border-2
                       ${selected ? 'bg-blue-600 border-blue-400 shadow-lg' : 'bg-gray-700 border-gray-600 hover:bg-gray-600 hover:border-blue-500'}
                       hover:scale-[1.02]`}
-                    role="radio"
-                    aria-checked={selected}
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === ' ' || e.key === 'Enter') {
-                        e.preventDefault();
-                        handleOptionToggle(q._id, opt);
-                      }
-                    }}
                   >
                     <input
                       type="radio"
@@ -275,17 +245,16 @@ const Exam = () => {
                       value={opt}
                       checked={selected}
                       readOnly
-                      className="mr-3 cursor-pointer"
-                      tabIndex={-1}
+                      className="mr-3"
                     />
-                    <span className="align-middle">{opt}</span>
+                    {opt}
                   </div>
                 );
               })
             ) : q.type === 'short' ? (
               <input
                 type="text"
-                className="w-full p-4 bg-gray-700 rounded-xl text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                className="w-full p-4 bg-gray-700 rounded-xl text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onChange={(e) => handleChange(q._id, e.target.value)}
                 value={answers[q._id] || ''}
                 placeholder="Type your answer here..."
@@ -300,7 +269,7 @@ const Exam = () => {
       <div className="mt-12 flex justify-center">
         <button
           onClick={handleSubmit}
-          className="cursor-pointer bg-green-600 hover:bg-green-700 px-10 py-4 rounded-3xl text-white font-extrabold shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-400"
+          className="bg-green-600 hover:bg-green-700 px-10 py-4 rounded-3xl text-white font-extrabold shadow-lg hover:scale-105"
         >
           Submit Exam
         </button>
