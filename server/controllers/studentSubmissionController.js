@@ -3,13 +3,16 @@ const Question = require('../models/Question');
 
 exports.submitExam = async (req, res) => {
   try {
-    const { studentEmail, answers, snapshots } = req.body;
+    const { studentEmail, answers, snapshots, examStartTime } = req.body;
 
     if (!studentEmail || typeof studentEmail !== 'string') {
       return res.status(400).json({ error: 'Invalid or missing studentEmail' });
     }
     if (!Array.isArray(answers) || answers.length === 0) {
       return res.status(400).json({ error: 'Answers must be a non-empty array' });
+    }
+    if (!examStartTime) {
+      return res.status(400).json({ error: 'Missing examStartTime' });
     }
 
     const normalizedAnswers = answers.map(ans => ({
@@ -26,6 +29,7 @@ exports.submitExam = async (req, res) => {
 
     const submission = new Submission({
       studentEmail,
+      examStartTime: new Date(examStartTime),
       answers: normalizedAnswers,
       snapshots: normalizedSnapshots,
       submittedAt: new Date(),
@@ -70,6 +74,7 @@ exports.getAllSubmissions = async (req, res) => {
         questionIdsSet.add(ans.questionId);
       });
     });
+
     const questionIds = Array.from(questionIdsSet);
     const questions = await Question.find({ _id: { $in: questionIds } });
 
@@ -93,6 +98,11 @@ exports.getAllSubmissions = async (req, res) => {
         };
       });
 
+      const duration =
+        sub.submittedAt && sub.examStartTime
+          ? Math.floor((new Date(sub.submittedAt) - new Date(sub.examStartTime)) / 60000)
+          : null;
+
       return {
         ...sub._doc,
         answers: enrichedAnswers,
@@ -100,6 +110,7 @@ exports.getAllSubmissions = async (req, res) => {
           image: snap.image,
           timestamp: snap.timestamp,
         })),
+        duration,
       };
     });
 

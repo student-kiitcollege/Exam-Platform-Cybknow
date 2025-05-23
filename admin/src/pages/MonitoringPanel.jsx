@@ -145,13 +145,31 @@ const MonitoringPanel = () => {
             <div className="space-y-10 transition-all duration-300 ease-in-out">
               {studentSubs.map((submission, idx) => {
                 const { correctCount, totalQuestions, wrongCount, negativeMarks, score } = calculateStats(submission.answers);
+                const examStart = new Date(submission.examStartTime);
+                const submitted = new Date(submission.submittedAt);
+                const duration = Math.floor((submitted - examStart) / 60000);
 
                 return (
                   <article key={idx} className="bg-gray-900 rounded-md p-6 border border-gray-700 shadow-md">
-                    <div className="flex justify-between items-center mb-4">
-                      <p className="text-sm text-gray-400">
-                        🕒 Submitted at: <time dateTime={submission.submittedAt}>{formatDateTime(submission.submittedAt)}</time>
+                    <div className="inline-block px-3 py-1 text-xs font-semibold text-white bg-gradient-to-r from-green-500 to-green-700 rounded-full mb-3 shadow-sm">
+                      🎬 Started: {examStart.toLocaleTimeString()}
+                    </div>
+
+                    <div className="text-sm space-y-1 mb-4 text-gray-300">
+                      <p>
+                        🟢 <strong className="text-green-400">Exam Started:</strong>{' '}
+                        <time dateTime={submission.examStartTime}>{formatDateTime(submission.examStartTime)}</time>
                       </p>
+                      <p>
+                        🕒 <strong className="text-yellow-300">Submitted At:</strong>{' '}
+                        <time dateTime={submission.submittedAt}>{formatDateTime(submission.submittedAt)}</time>
+                      </p>
+                      <p>
+                        ⏱️ <strong className="text-indigo-300">Duration:</strong> {duration} mins
+                      </p>
+                    </div>
+
+                    <div className="flex justify-end mb-4">
                       <button
                         onClick={() => handleDelete(submission._id)}
                         className="cursor-pointer text-sm px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-md transition duration-200 flex items-center space-x-2"
@@ -247,7 +265,7 @@ const MonitoringPanel = () => {
             src={previewImage}
             alt="Snapshot preview"
             className="max-w-full max-h-full rounded-lg shadow-lg"
-            onClick={(e) => e.stopPropagation()} 
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}

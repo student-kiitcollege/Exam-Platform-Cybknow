@@ -14,12 +14,12 @@ const Exam = () => {
   const [error, setError] = useState(null);
   const [isTimeUp, setIsTimeUp] = useState(false);
   const [snapshots, setSnapshots] = useState([]);
+  const [examStartTime, setExamStartTime] = useState(null);
 
   const webcamRef = useRef(null);
   const questionRefs = useRef([]);
   const snapshotIntervalRef = useRef(null);
 
-  // Fetch questions
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
@@ -36,6 +36,7 @@ const Exam = () => {
 
         const data = await response.json();
         setQuestions(data);
+        setExamStartTime(new Date().toISOString()); 
       } catch (err) {
         setError('Failed to fetch questions. Please try again later.');
       } finally {
@@ -89,7 +90,7 @@ const Exam = () => {
           setSnapshots((prev) => [...prev, { image: imageSrc, timestamp: new Date().toISOString() }]);
         }
       }
-    }, 10000); 
+    }, 10000);
 
     return () => {
       if (snapshotIntervalRef.current) {
@@ -111,6 +112,7 @@ const Exam = () => {
 
       const payload = {
         studentEmail: user?.email,
+        examStartTime,
         answers: formattedAnswers,
         snapshots,
         submittedAt: new Date().toISOString(),
