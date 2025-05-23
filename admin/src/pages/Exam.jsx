@@ -269,7 +269,7 @@ const Exam = () => {
       <div className="mt-12 flex justify-center">
         <button
           onClick={handleSubmit}
-          className="bg-green-600 hover:bg-green-700 px-10 py-4 rounded-3xl text-white font-extrabold shadow-lg hover:scale-105"
+          className="cursor-pointer bg-green-600 hover:bg-green-700 px-10 py-4 rounded-3xl text-white font-extrabold shadow-lg hover:scale-105"
         >
           Submit Exam
         </button>

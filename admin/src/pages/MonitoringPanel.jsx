@@ -108,7 +108,7 @@ const MonitoringPanel = () => {
     <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 overflow-auto p-8 text-white select-none">
       <button
         onClick={() => navigate('/teacher-dashboard')}
-        className="mb-6 inline-flex items-center space-x-2 px-5 py-2 bg-red-600 rounded-md hover:bg-red-700 transition-colors duration-300 font-semibold shadow-lg"
+        className="cursor-pointer mb-6 inline-flex items-center space-x-2 px-5 py-2 bg-red-600 rounded-md hover:bg-red-700 transition-colors duration-300 font-semibold shadow-lg"
       >
         <FontAwesomeIcon icon={faArrowLeft} />
         <span>Back to Dashboard</span>
