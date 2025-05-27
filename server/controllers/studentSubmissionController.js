@@ -8,17 +8,58 @@ exports.submitExam = async (req, res) => {
     if (!studentEmail || typeof studentEmail !== 'string') {
       return res.status(400).json({ error: 'Invalid or missing studentEmail' });
     }
-    if (!Array.isArray(answers) || answers.length === 0) {
-      return res.status(400).json({ error: 'Answers must be a non-empty array' });
+    if (!Array.isArray(answers)) {
+      return res.status(400).json({ error: 'Answers must be an array' });
     }
     if (!examStartTime) {
       return res.status(400).json({ error: 'Missing examStartTime' });
     }
 
-    const normalizedAnswers = answers.map(ans => ({
-      questionId: ans.questionId,
-      answer: typeof ans.answer === 'string' ? ans.answer : '',
-    }));
+    const questions = await Question.find({ assignedTo: studentEmail });
+
+    const answerMap = {};
+    answers.forEach(ans => {
+      if (ans.questionId) {
+        answerMap[ans.questionId] = typeof ans.answer === 'string' ? ans.answer.trim() : '';
+      }
+    });
+
+    let correctCount = 0;
+    let wrongCount = 0;
+    let unattemptedCount = 0;
+    let penaltyUsed = 0;
+
+    const evaluatedAnswers = questions.map(q => {
+      const qId = q._id.toString();
+      const studentAnswer = answerMap[qId] || '';
+      let score = 0;
+
+      if (!studentAnswer) {
+        score = 0;
+        unattemptedCount++;
+      } else if (
+        q.correctAnswer &&
+        q.correctAnswer.toString().trim().toLowerCase() === studentAnswer.toLowerCase()
+      ) {
+        score = 1;
+        correctCount++;
+      } else {
+        if (penaltyUsed < 3) {
+          score = -1;
+          wrongCount++;
+          penaltyUsed++;
+        } else {
+          score = 0;
+          wrongCount++;
+        }
+      }
+
+      return {
+        questionId: q._id,
+        answer: studentAnswer,
+        score,
+      };
+    });
 
     const normalizedSnapshots = Array.isArray(snapshots)
       ? snapshots.map(snap => ({
@@ -30,14 +71,24 @@ exports.submitExam = async (req, res) => {
     const submission = new Submission({
       studentEmail,
       examStartTime: new Date(examStartTime),
-      answers: normalizedAnswers,
+      answers: evaluatedAnswers,
       snapshots: normalizedSnapshots,
       submittedAt: new Date(),
     });
 
     await submission.save();
 
-    return res.status(200).json({ message: 'Submission successful' });
+    const totalScore = evaluatedAnswers.reduce((sum, ans) => sum + ans.score, 0);
+
+    return res.status(200).json({
+      message: 'Submission successful',
+      summary: {
+        totalScore,
+        correctCount,
+        wrongCount,
+        unattemptedCount,
+      },
+    });
   } catch (error) {
     console.error('Error submitting exam:', error);
     return res.status(500).json({ error: error.message || 'Internal Server Error' });
@@ -87,7 +138,9 @@ exports.getAllSubmissions = async (req, res) => {
       const enrichedAnswers = sub.answers.map(ans => {
         const q = questionMap[ans.questionId];
         return {
-          ...ans._doc,
+          questionId: ans.questionId,
+          answer: ans.answer,
+          score: ans.score,
           question: q
             ? {
                 _id: q._id,
@@ -103,14 +156,25 @@ exports.getAllSubmissions = async (req, res) => {
           ? Math.floor((new Date(sub.submittedAt) - new Date(sub.examStartTime)) / 60000)
           : null;
 
+      const totalScore = sub.answers.reduce((sum, a) => sum + a.score, 0);
+      const correctCount = sub.answers.filter(a => a.score === 1).length;
+      const wrongCount = sub.answers.filter(a => a.score === -1 || (a.score === 0 && a.answer !== '')).length;
+      const unattemptedCount = sub.answers.filter(a => a.answer === '').length;
+
       return {
         ...sub._doc,
         answers: enrichedAnswers,
+        duration,
+        summary: {
+          totalScore,
+          correctCount,
+          wrongCount,
+          unattemptedCount,
+        },
         snapshots: sub.snapshots.map(snap => ({
           image: snap.image,
           timestamp: snap.timestamp,
         })),
-        duration,
       };
     });
 
