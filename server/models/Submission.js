@@ -6,7 +6,7 @@ const answerSchema = new mongoose.Schema({
 });
 
 const snapshotSchema = new mongoose.Schema({
-  image: { type: String, required: true },
+  image: { type: String, required: true }, // base64 string or image URL
   timestamp: { type: Date, default: Date.now },
 });
 
@@ -22,7 +22,6 @@ const submissionSchema = new mongoose.Schema({
     default: [],
   },
   submittedAt: { type: Date, default: Date.now },
-  examStartTime: { type: Date, required: true },
 });
 
 module.exports = mongoose.model('Submission', submissionSchema);

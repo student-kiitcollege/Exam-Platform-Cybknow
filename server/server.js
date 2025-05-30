@@ -3,7 +3,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-// Correct import paths - double check your filenames!
 const questionRoutes = require('./routes/questinRoutes'); 
 const authRoutes = require('./routes/authRoutes');
 const studentSubmissionRoutes = require('./routes/studentSubmissionRoutes');
